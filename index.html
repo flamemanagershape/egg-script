@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steal An Egg Script — egg-script | Auto-Collect & Rare Egg ESP</title>
+<meta name="description" content="Steal An Egg Script: auto-collect egg steals, instant teleport to egg spawns, bypass cooldowns, ESP on rare eggs. Executor-ready Lua for your egg farm.">
+<style>
+  *,
+  *::before,
+  *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep: #070b1a;
+    --bg-mid: #0d1330;
+    --bg-soft: #131a3d;
+    --indigo: #6366f1;
+    --violet: #8b5cf6;
+    --cyan: #22d3ee;
+    --text: #e6e9f5;
+    --muted: #9aa3c0;
+    --line: rgba(255, 255, 255, 0.09);
+    --glass: rgba(18, 24, 52, 0.62);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    background:
+      radial-gradient(1100px 700px at 12% -8%, rgba(99, 102, 241, 0.28), transparent 62%),
+      radial-gradient(950px 650px at 88% 2%, rgba(139, 92, 246, 0.22), transparent 60%),
+      radial-gradient(900px 700px at 50% 108%, rgba(34, 211, 238, 0.14), transparent 65%),
+      linear-gradient(180deg, var(--bg-deep) 0%, #0a0f26 42%, #0b0f22 100%);
+    background-attachment: fixed;
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  .wrap {
+    width: 100%;
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- NAV ---------- */
+  .nav-shell {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 14px 0;
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    background: rgba(9, 13, 32, 0.55);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.06rem;
+    letter-spacing: -0.015em;
+  }
+
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: linear-gradient(140deg, var(--indigo), var(--violet));
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+  }
+
+  .brand span.egg { color: var(--cyan); }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-links a {
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    color: var(--muted);
+    transition: color 0.2s ease, background 0.2s ease;
+  }
+
+  .nav-links a:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    font-weight: 700;
+    font-size: 0.94rem;
+    padding: 12px 22px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--indigo), var(--violet));
+    color: #fff;
+    box-shadow: 0 10px 30px -8px rgba(99, 102, 241, 0.8);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px -10px rgba(139, 92, 246, 0.9);
+  }
+
+  .btn-ghost {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--line);
+    color: var(--text);
+  }
+
+  .btn-ghost:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .nav .btn { padding: 10px 18px; font-size: 0.88rem; }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    padding: 92px 0 76px;
+    text-align: center;
+    position: relative;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 16px 7px 9px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #cfd6ff;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(129, 140, 248, 0.35);
+    margin-bottom: 26px;
+  }
+
+  .pill .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.16);
+    animation: pulse 2.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.16); }
+    50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0.05); }
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    font-weight: 800;
+    margin: 0 auto 22px;
+    max-width: 15ch;
+  }
+
+  .grad {
+    background: linear-gradient(100deg, #a5b4fc 0%, #c4b5fd 35%, #67e8f9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .hero p.lede {
+    max-width: 640px;
+    margin: 0 auto 34px;
+    color: var(--muted);
+    font-size: clamp(0.98rem, 2vw, 1.12rem);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    margin-bottom: 52px;
+  }
+
+  .hero-actions .btn { padding: 15px 30px; font-size: 1rem; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .stat {
+    padding: 18px 14px;
+    border-radius: 14px;
+    background: var(--glass);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .stat b {
+    display: block;
+    font-size: 1.18rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+
+  .stat small {
+    color: var(--muted);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+
+  /* ---------- SECTIONS ---------- */
+  section { padding: 78px 0; }
+
+  .sec-head {
+    text-align: center;
+    max-width: 660px;
+    margin: 0 auto 48px;
+  }
+
+  .sec-tag {
+    display: inline-block;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    letter-spacing: -0.03em;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+
+  .sec-head p { color: var(--muted); font-size: 1rem; }
+
+  /* ---------- FEATURES ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .card {
+    position: relative;
+    padding: 28px 24px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(24, 31, 66, 0.72), rgba(13, 18, 41, 0.72));
+    border: 1px solid var(--line);
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--indigo), var(--violet), var(--cyan));
+    opacity: 0.85;
+  }
+
+  .card:hover {
+    transform: translateY(-7px);
+    border-color: rgba(139, 92, 246, 0.45);
+    box-shadow: 0 24px 48px -20px rgba(99, 102, 241, 0.55);
+  }
+
+  .card .ico {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    font-size: 1.35rem;
+    margin-bottom: 18px;
+    background: rgba(99, 102, 241, 0.14);
+    border: 1px solid rgba(129, 140, 248, 0.26);
+  }
+
+  .card h3 {
+    font-size: 1.04rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin-bottom: 8px;
+  }
+
+  .card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.62;
+  }
+
+  /* ---------- HOW IT WORKS ---------- */
+  .steps {
+    position: relative;
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 34px;
+  }
+
+  .steps::before {
+    content: "";
+    position: absolute;
+    left: 26px;
+    top: 22px;
+    bottom: 22px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--indigo), var(--violet), var(--cyan));
+    border-radius: 2px;
+    opacity: 0.6;
+  }
+
+  .step {
+    position: relative;
+    display: flex;
+    gap: 22px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    flex: 0 0 54px;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #fff;
+    background: linear-gradient(140deg, #1b2350, #131a3d);
+    border: 1px solid rgba(129, 140, 248, 0.45);
+    box-shadow: 0 0 0 6px rgba(7, 11, 26, 0.9), 0 8px 22px -10px rgba(99, 102, 241, 0.8);
+    z-index: 1;
+  }
+
+  .step-body {
+    padding-top: 6px;
+  }
+
+  .step-body h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.015em;
+  }
+
+  .step-body p {
+    color: var(--muted);
+    font-size: 0.92rem;
+    max-width: 52ch;
+  }
+
+  .step-body code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.84em;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.16);
+    border: 1px solid rgba(129, 140, 248, 0.28);
+    color: #c7d2fe;
+  }
+
+  /* ---------- FAQ ---------- */
+  .faq {
+    max-width: 780px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  details {
+    border-radius: 14px;
+    background: var(--glass);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow: hidden;
+    transition: border-color 0.22s ease, background 0.22s ease;
+  }
+
+  details[open] {
+    border-color: rgba(139, 92, 246, 0.42);
+    background: rgba(24, 31, 66, 0.78);
+  }
+
+  summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px 22px;
+    font-weight: 650;
+    font-size: 0.98rem;
+    letter-spacing: -0.01em;
+    user-select: none;
+  }
+
+  summary::-webkit-details-marker { display: none; }
+
+  .icon-plus {
+    flex: 0 0 auto;
+    position: relative;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    background: rgba(99, 102, 241, 0.16);
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), background 0.22s ease;
+  }
+
+  .icon-plus::before,
+  .icon-plus::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: #c7d2fe;
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.2s ease;
+  }
+
+  .icon-plus::before { width: 11px; height: 2px; }
+  .icon-plus::after { width: 2px; height: 11px; }
+
+  details[open] .icon-plus {
+    transform: rotate(135deg);
+    background: rgba(139, 92, 246, 0.3);
+  }
+
+  details[open] .icon-plus::after { opacity: 0; }
+
+  .faq-answer {
+    padding: 0 22px 22px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.68;
+    max-width: 64ch;
+  }
+
+  /* ---------- CTA BANNER ---------- */
+  .cta-banner {
+    position: relative;
+    padding: 62px 32px;
+    border-radius: 22px;
+    text-align: center;
+    overflow: hidden;
+    background:
+      radial-gradient(700px 340px at 50% -30%, rgba(139, 92, 246, 0.5), transparent 68%),
+      radial-gradient(600px 320px at 50% 130%, rgba(34, 211, 238, 0.22), transparent 70%),
+      linear-gradient(160deg, rgba(30, 38, 80, 0.92), rgba(12, 17, 40, 0.96));
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    box-shadow: 0 40px 90px -40px rgba(99, 102, 241, 0.6);
+  }
+
+  .cta-banner h2 { margin-bottom: 12px; }
+
+  .cta-banner p {
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 auto 30px;
+    font-size: 1rem;
+  }
+
+  .cta-banner .btn { padding: 15px 34px; font-size: 1rem; }
+
+  .cta-note {
+    margin-top: 18px;
+    font-size: 0.78rem;
+    color: #7f89ab;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 34px 0 42px;
+    margin-top: 20px;
+  }
+
+  .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+
+  .foot-left { display: flex; align-items: center; gap: 10px; }
+
+  .foot a.link {
+    color: #c7d2fe;
+    font-weight: 600;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .foot a.link:hover {
+    color: #fff;
+    border-bottom-color: rgba(199, 210, 254, 0.6);
+  }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .nav-shell { padding: 12px 0; }
+    .hero { padding: 62px 0 54px; }
+    .hero-actions { flex-direction: column; align-items: stretch; }
+    .hero-actions .btn { width: 100%; }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid { grid-template-columns: 1fr; }
+    section { padding: 56px 0; }
+    .steps::before { left: 22px; }
+    .step-num { flex: 0 0 46px; width: 46px; height: 46px; font-size: 0.95rem; }
+    .step { gap: 16px; }
+    .cta-banner { padding: 46px 20px; }
+    .foot { flex-direction: column; text-align: center; gap: 12px; }
+    summary { padding: 17px 18px; font-size: 0.93rem; }
+    .faq-answer { padding: 0 18px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= NAV ================= -->
+<div class="nav-shell">
+  <div class="wrap">
+    <nav class="nav">
+      <a href="#top" class="brand">
+        <span class="brand-mark">🥚</span>
+        <span>egg-<span class="egg">script</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#faq">FAQ</a>
+      </div>
+
+      <a class="btn btn-primary" href="https://gitscore.cc">Download</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ================= HERO ================= -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="pill"><span class="dot"></span> Steal An Egg Script · Executor-Ready Lua</div>
+
+    <h1>Steal An Egg <span class="grad">Script</span> for Your Egg Farm</h1>
+
+    <p class="lede">
+      Auto-collect egg steals the moment they spawn, teleport instantly to every egg spawn,
+      skip cooldowns entirely, and track rare eggs with a live ESP overlay — all in one
+      lightweight, executor-ready Lua script from the egg-script project.
+    </p>
+
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://gitscore.cc">⬇ Download the Script</a>
+      <a class="btn btn-ghost" href="https://gitscore.cc">★ View on GitHub</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>48,200+</b><small>Downloads</small></div>
+      <div class="stat"><b>v3.4.1</b><small>Latest version</small></div>
+      <div class="stat"><b>Windows</b><small>10 / 11</small></div>
+      <div class="stat"><b>Free</b><small>&amp; open source</small></div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= FEATURES ================= -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag">Features</span>
+      <h2>Everything your egg farm needs</h2>
+      <p>Six tightly integrated modules that turn a manual egg grind into a hands-free operation.</p>
+    </div>
+
+    <div class="grid">
+      <article class="card">
+        <div class="ico">🥚</div>
+        <h3>Auto-Collect Egg Steals</h3>
+        <p>Detects steal events the instant they fire and claims them automatically — no more missed eggs while you're away from the keyboard.</p>
+      </article>
+
+      <article class="card">
+        <div class="ico">⚡</div>
+        <h3>Instant Teleport to Spawns</h3>
+        <p>Snaps your character directly to every active egg spawn point with a single toggle, so you always arrive before the competition.</p>
+      </article>
+
+      <article class="card">
+        <div class="ico">⏱️</div>
+        <h3>Cooldown Bypass</h3>
+        <p>Removes the artificial wait between steals and pickups, keeping your collection loop running at full speed around the clock.</p>
+      </article>
+
+      <article class="card">
+        <div class="ico">👁️</div>
+        <h3>Rare Egg ESP</h3>
+        <p>Highlights rare and legendary eggs through walls with a clean outline overlay, complete with distance readouts and name tags.</p>
+      </article>
+
+      <article class="card">
+        <div class="ico">🧩</div>
+        <h3>Executor-Ready Lua</h3>
+        <p>A single self-contained script with no external dependencies. Paste, execute, and the whole egg-script suite loads in seconds.</p>
+      </article>
+
+      <article class="card">
+        <div class="ico">🛡️</div>
+        <h3>Lightweight &amp; Stable</h3>
+        <p>Optimized loops and guarded calls keep CPU usage low and the session stable during long unattended farm runs.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-tag">How it works</span>
+      <h2>Running in under a minute</h2>
+      <p>No installers, no config files, no build step — just three quick actions.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <
